@@ -1,0 +1,4 @@
+Flask==3.0.3
+pymongo==4.10.1
+Flask-PyMongo==2.3.0
+mongoengine==0.29.1
