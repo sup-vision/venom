@@ -1,8 +1,9 @@
-from mongoengine import Document, StringField, IntField, EmailField
+from mongoengine import Document, StringField, EmailField, DateTimeField
+from datetime import datetime
 
 class User(Document):
-    name = StringField(required=True, max_length=50)
     email = EmailField(required=True, unique=True)
-    age = IntField(min_value=0)
-
-    meta = {"collection": "users"}
+    password_hash = StringField(required=True)
+    # store GridFS file id (ObjectId) as string
+    avatar_file_id = StringField()
+    created_at = DateTimeField(default=datetime.utcnow)

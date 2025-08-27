@@ -1,12 +1,30 @@
+# routes/user_routes.py
 from flask import Blueprint
 from controllers.user_controller import (
-    create_user, get_all_users, get_user, update_user, delete_user
+    create_user, 
+    upload_avatar, 
+    get_avatar, 
+    delete_avatar
 )
 
-user_bp = Blueprint("user", __name__)
+bp = Blueprint('users', __name__)
 
-user_bp.route("/", methods=["POST"])(create_user)
-user_bp.route("/", methods=["GET"])(get_all_users)
-user_bp.route("/<user_id>", methods=["GET"])(get_user)
-user_bp.route("/<user_id>", methods=["PUT"])(update_user)
-user_bp.route("/<user_id>", methods=["DELETE"])(delete_user)
+# Create user (simple example)
+@bp.route('', methods=['POST'])
+def create_user_route():
+    return create_user()
+
+# Upload avatar
+@bp.route('/<user_id>/avatar', methods=['POST'])
+def upload_avatar_route(user_id):
+    return upload_avatar(user_id)
+
+# Get avatar
+@bp.route('/<user_id>/avatar', methods=['GET'])
+def get_avatar_route(user_id):
+    return get_avatar(user_id)
+
+# Delete avatar
+@bp.route('/<user_id>/avatar', methods=['DELETE'])
+def delete_avatar_route(user_id):
+    return delete_avatar(user_id)
