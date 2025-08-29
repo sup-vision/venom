@@ -16,10 +16,6 @@ class User(Document):
     # API key validation
     key = StringField(required=True)
     
-    # Optional fields with validation
-    first_name = StringField(max_length=50, regex=r'^[a-zA-Z\s]+$')
-    last_name = StringField(max_length=50, regex=r'^[a-zA-Z\s]+$')
-    
     # 'searches' will store a list of Incident document references (ObjectIds)
     searches = ListField(ObjectIdField(), default=list)
     
@@ -43,7 +39,6 @@ class User(Document):
         self._validate_email_format()
         self._validate_password_strength()
         self._validate_key_format()
-        self._validate_names()
         self._validate_searches()
         
         # Update timestamp
@@ -117,24 +112,6 @@ class User(Document):
             # Hash the password
             self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
-    def _validate_names(self):
-        """Validate first and last names"""
-        if self.first_name:
-            if len(self.first_name.strip()) < 2:
-                raise ValidationError('First name must be at least 2 characters long')
-            if len(self.first_name.strip()) > 50:
-                raise ValidationError('First name must be no more than 50 characters long')
-            # Remove extra spaces
-            self.first_name = ' '.join(self.first_name.strip().split())
-        
-        if self.last_name:
-            if len(self.last_name.strip()) < 2:
-                raise ValidationError('Last name must be at least 2 characters long')
-            if len(self.last_name.strip()) > 50:
-                raise ValidationError('Last name must be no more than 50 characters long')
-            # Remove extra spaces
-            self.last_name = ' '.join(self.last_name.strip().split())
-    
     def _validate_searches(self):
         """Validate searches list (should be a list of ObjectId referencing IncidentModel)"""
         from bson import ObjectId
@@ -185,8 +162,6 @@ class User(Document):
             'id': str(self.id),
             'email': self.email,
             'phone': self.phone,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
             'searches': self.searches,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

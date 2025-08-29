@@ -15,7 +15,7 @@ def create_user():
     data = request.json or {}
     
     # Required field validation
-    required_fields = ['email', 'password', 'phone', 'first_name', 'last_name']
+    required_fields = ['email', 'password', 'phone']
     missing_fields = [field for field in required_fields if not data.get(field)]
     
     if missing_fields:
@@ -34,8 +34,6 @@ def create_user():
             phone=data['phone'],
             password_hash=data['password'],  # Will be hashed automatically
             key=api_key,
-            first_name=data.get('first_name'),
-            last_name=data.get('last_name'),
         )
         
         # Save user (validation happens in clean() method)
@@ -46,8 +44,6 @@ def create_user():
                 'id': str(user.id),
                 'email': user.email,
                 'phone': user.phone,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
                 'api_key': api_key,
             },
             'message': 'User created successfully'
@@ -93,8 +89,7 @@ def login_user(user_id):
                 "message": 'Login successful',
                 'user_id': str(user.id),
                 'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name
+                'phone': user.phone,
             }), 200
         else:
             return jsonify({
