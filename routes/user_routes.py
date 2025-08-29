@@ -2,9 +2,10 @@
 from flask import Blueprint
 from controllers.user_controller import (
     create_user, 
+    login_user,
     upload_avatar, 
     get_avatar, 
-    delete_avatar
+    delete_avatar,
 )
 
 bp = Blueprint('users', __name__)
@@ -13,6 +14,10 @@ bp = Blueprint('users', __name__)
 @bp.route('', methods=['POST'])
 def create_user_route():
     return create_user()
+
+@bp.route('/<user_id>/login', methods=['POST'])
+def login_user_route(user_id):
+    return login_user(user_id)
 
 # Upload avatar
 @bp.route('/<user_id>/avatar', methods=['POST'])
