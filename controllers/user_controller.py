@@ -13,7 +13,7 @@ import io
 def create_user():
     """Create a new user with comprehensive validation"""
     data = request.json or {}
-    
+
     # Required field validation
     required_fields = ['email', 'password', 'phone']
     missing_fields = [field for field in required_fields if not data.get(field)]
@@ -70,18 +70,25 @@ def create_user():
             'detail': str(e)
         }), 500
 
-def login_user(user_id):
+def login_user():
     """Login user with proper validation"""
     data = request.json or {}
     
-    if not data.get('email') or not data.get('password'):
+    if not data.get('email') and not data.get('phone'):
         return jsonify({
-            'error': 'Email and password are required'
+            'error': 'Email or phone is required'
         }), 400
-    
+    elif not data.get('password'):
+        return jsonify({
+            'error': 'Password is required'
+        }), 400
+
+    query = {"email": data.get('email')} if data.get('email') else {"phone": data.get('phone')}
+
     try:
-        # Find user by email instead of user_id for login
-        user = User.objects.get(email=data['email'])
+        # When we use ** before a dictionary (e.g., **query), it unpacks the dictionary into keyword arguments.
+        # For example, if query = {'email': 'foo@bar.com'}, then User.objects.get(**query) is equivalent to User.objects.get(email='foo@bar.com').
+        user = User.objects.get(**query)
         
         # Check password using the model method
         if user.check_password(data['password']):
@@ -203,15 +210,16 @@ def get_user(user_id):
 def delete_user(user_id):
     """Delete user with proper error handling"""
     data = request.json or {}
+    
     if not data.get('password'):
         return jsonify({
             'error': 'Password is required'
         }), 400
     
     try:
+        user = User.objects.get(id=user_id)
         
         if user.check_password(data['password']):
-            user = User.objects.get(id=user_id)
             user.delete()
             return jsonify({"message": "The account has been deleted successfully"}), 200
         else:
@@ -226,6 +234,6 @@ def delete_user(user_id):
         
     except Exception as e:
         return jsonify({
-            'error': 'Failed to delete user',
-            'detail': str(e)
+            'detail': str(e),
+            'error': 'Failed to delete user'
         }), 500

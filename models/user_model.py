@@ -25,7 +25,7 @@ class User(Document):
     
     # Meta configuration
     meta = {
-        'collection': 'users',
+        'collection': 'user',
         'indexes': [
             'email',
             'key',
@@ -38,7 +38,7 @@ class User(Document):
         self._validate_phone_format()
         self._validate_email_format()
         self._validate_password_strength()
-        self._validate_key_format()
+        # self._validate_key_format()
         self._validate_searches()
         
         # Update timestamp
