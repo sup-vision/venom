@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, DateTimeField, ListField, DictField, IntField
+from mongoengine import Document, StringField, DateTimeField, ListField, DictField, IntField, ObjectIdField
 from datetime import datetime
 
 class Student(Document):
@@ -11,13 +11,13 @@ class Student(Document):
     batch = StringField(required=True)
     course = StringField(required=True)
     branch = StringField(required=True)
-    face_id = StringField(required=True)
+    face_id = ObjectIdField()
     # List of dictionaries, each with 'subject_code' and 'attendance_percentage' (integer)
     sub_attendance = ListField(
         DictField(
             fields={
                 'subject_code': StringField(required=True),
-                'attendance_percentage': IntField(min_value=0, max_value=100, required=True)
+                'attendance_percentage': IntField(min_value=0, max_value=100, default=0)
             }
         ),
         default=list
