@@ -1,6 +1,8 @@
 from mongoengine import Document, StringField, DateTimeField, ListField, DictField, IntField, ObjectIdField
 from datetime import datetime
 
+
+# Put required for specific fields
 class Student(Document):
     phone = StringField(required=True)
     email = StringField(required=True)

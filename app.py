@@ -15,9 +15,11 @@ def create_app():
 
     from routes.user_routes import bp as user_bp
     from routes.file_routes import bp as file_bp
+    from routes.student_routes import bp as student_bp
 
     app.register_blueprint(user_bp, url_prefix='/api/v1/users')
     app.register_blueprint(file_bp, url_prefix='/api/v1/files')
+    app.register_blueprint(student_bp, url_prefix='/api/v1/students')
 
     return app
 
