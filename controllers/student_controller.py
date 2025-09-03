@@ -10,7 +10,7 @@ UPDATABLE_FIELDS = [
     'batch', 'course', 'branch', 'face_id', 'sub_attendance'
 ]
 FINDABLE_FIELDS = [
-    'section', 'semester', 'course', 'branch'
+    'section', 'semester', 'branch', 'course'
 ]
 FINDABLE_FIELDS_WITH_ROLL_NUMBER = [
     'roll_number', 'section', 'semester', 
@@ -247,11 +247,100 @@ def get_student(id):
     except Exception as e:
         return jsonify({'error': 'Failed to retrieve student', 'detail': str(e)}), 500
 
+
+# --- BULK ATTENDANCE UPDATE ---
+def update_attendance_for_subject():
+    """
+    Update attendance percentage for all students in a specific subject.
+
+    Example of expected request data (JSON):
+
+    {
+        "subject_code": "CS101",
+        "semester": "6",
+        "section": "A",
+        "branch": "CSE",
+        "student_ids": [  # List of student IDs
+            "665f2b1e2c8b4e1a2b3c4d5e",
+            "665f2b1e2c8b4e1a2b3c4d5f"
+        ]
+    }
+    """
+    data = request.get_json() or {}
+    
+
+    # Validate required fields
+    if 'subject_code' not in data:
+        return jsonify({'error': 'subject_code is required'}), 400
+    
+    if 'student_ids' not in data:
+        return jsonify({'error': 'student_ids is required'}), 400
+    
+    subject_code = data['subject_code']
+    student_ids = data['student_ids']
+    
+    # Validate attendance_data format
+    if not isinstance(student_ids, list):
+        return jsonify({'error': 'attendance_data must be a list'}), 400
+    
+    try:
+        all_students = []
+        updated_count = 0
+        errors = []
+
+        missing_fields = [field for field in FINDABLE_FIELDS[:-1] if field not in data]
+        if missing_fields:
+            errors.append(f"Missing required fields: {missing_fields}")
+        else:
+            filter_query = {field: data[field] for field in FINDABLE_FIELDS[:-1]}
+            all_students = Student.objects(**filter_query)
+        
+        for student_id in student_ids:
+            if student_id not in [str(student.id) for student in all_students]:
+                errors.append(f"Student with ID {student_id} not found")
+                continue  # Skip this ID and continue with the next one
+
+            student = Student.objects.get(id=student_id)
+            for i, sub_att in enumerate(student.sub_attendance):
+                if sub_att.get('subject_code') == subject_code:
+                    # Update attendance using your logic
+                    attendance_percentage_old = student.sub_attendance[i]['attendance_percentage']
+                    if attendance_percentage_old < 100:
+                        total_classes = round(100 / (100 - attendance_percentage_old)) if attendance_percentage_old != 0 else 1
+                        total_classes_attended = round((attendance_percentage_old / 100) * total_classes)
+                        total_classes += 1
+                        total_classes_attended += 1
+                        new_percentage = (total_classes_attended / total_classes) * 100
+                        student.sub_attendance[i]['attendance_percentage'] = new_percentage
+                    else:
+                        # Already 100%, just increment total_classes and attended
+                        total_classes = 1
+                        total_classes_attended = 1
+                        student.sub_attendance[i]['attendance_percentage'] = 100
+                    break
+            else:
+                student.sub_attendance.append({
+                    'subject_code': subject_code,
+                    'attendance_percentage': 0
+                })
+                
+            student.save()
+            updated_count += 1
+
+        return jsonify({
+            'message': f'Attendance update completed for subject {subject_code}',
+            'updated_students': updated_count,
+            'total_requests': len(student_ids),
+            'errors': errors if errors else None,
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': 'Failed to update attendance', 'detail': str(e)}), 500
+
 # --- GET STUDENTS BY SUBJECT ---
 def get_students_by_subject():
     """Get all students enrolled in a specific subject"""
     try:
-        # Retrieve the 'subject_code' parameter from the query string of the request and remove any leading/trailing whitespace.
         subject_code = request.args.get('subject_code', '').strip()
         if not subject_code:
             return jsonify({'error': 'subject_code parameter is required'}), 400

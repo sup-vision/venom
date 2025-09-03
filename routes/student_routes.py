@@ -29,3 +29,8 @@ def get_student_route(student_id):
 @bp.route('/by-subject', methods=['GET'])
 def get_students_by_subject_route():
     return get_students_by_subject()
+
+# --- ATTENDANCE ROUTES ---
+@bp.route('/attendance/bulk-update', methods=['POST'])
+def update_attendance_for_subject_route():
+    return update_attendance_for_subject()
