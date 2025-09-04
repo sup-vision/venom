@@ -25,6 +25,19 @@ def get_all_students_route():
 def get_student_route(student_id):
     return get_student(student_id)
 
+@bp.route('/<student_id>', methods=['PUT'])
+def update_student_route(student_id):
+    return update_student(student_id)
+
+@bp.route('/<student_id>', methods=['DELETE'])
+def delete_student_route(student_id):
+    return delete_student(student_id)
+
+# --- SEARCH ROUTES ---
+@bp.route('/search', methods=['GET'])
+def search_students_route():
+    return search_students()
+
 # --- SUBJECT-SPECIFIC ROUTES ---
 @bp.route('/by-subject', methods=['GET'])
 def get_students_by_subject_route():
