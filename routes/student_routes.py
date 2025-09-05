@@ -8,7 +8,9 @@ from controllers.student_controller import (
     delete_student,
     search_students,
     get_students_by_subject,
-    update_attendance_for_subject
+    update_attendance_for_subject,
+    add_face_embedding,  # Add this import
+    get_face_embedding_status  # Add this import
 )
 
 bp = Blueprint('student', __name__)
@@ -32,6 +34,15 @@ def update_student_route(student_id):
 @bp.route('/<student_id>', methods=['DELETE'])
 def delete_student_route(student_id):
     return delete_student(student_id)
+
+# --- FACE EMBEDDING ROUTES ---
+@bp.route('/<student_id>/face-embedding', methods=['POST'])
+def add_face_embedding_route(student_id):
+    return add_face_embedding(student_id)
+
+@bp.route('/face-embedding-status', methods=['GET'])
+def get_face_embedding_status_route():
+    return get_face_embedding_status()
 
 # --- SEARCH ROUTES ---
 @bp.route('/search', methods=['GET'])

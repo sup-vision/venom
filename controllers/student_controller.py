@@ -1,8 +1,10 @@
+#controllers/student_controller.py
 from flask import request, jsonify
 from models.student_model import Student
 from mongoengine.errors import ValidationError, NotUniqueError
 from datetime import datetime
 import re
+from utils.face_utils import extract_face_embedding
 
 # Define updatable fields for student
 UPDATABLE_FIELDS = [
@@ -18,83 +20,88 @@ FINDABLE_FIELDS_WITH_ROLL_NUMBER = [
 ]
 
 
-# --- CREATE ---
+# --- CREATE --- (modified version)
 def create_student():
     """
-    Example of expected request data (JSON):
-
-    For a single student:
-    {
-        "phone": "9876543210",
-        "email": "student@example.com",
-        "name": "John Doe",
-        "roll_number": "CS2023001",
-        "section": "A",
-        "semester": "6",
-        "batch": "2023",
-        "course": "B.Tech",
-        "branch": "CSE",
-        "face_id": "faceid_123",
-        "sub_attendance": [
-            {
-                "subject_code": "CS101",
-                "attendance_percentage": 85
-            },
-            {
-                "subject_code": "MA102",
-                "attendance_percentage": 90
-            }
-        ]
-    }
-
-    For bulk create (list of students):
-    [
-        {
-            "phone": "9876543210",
-            "email": "student1@example.com",
-            "name": "John Doe",
-            "roll_number": "CS2023001",
-            "section": "A",
-            "semester": "6",
-            "batch": "2023",
-            "course": "B.Tech",
-            "branch": "CSE",
-            "face_id": "faceid_123",
-            "sub_attendance": [
-                {
-                    "subject_code": "CS101",
-                    "attendance_percentage": 85
-                }
-            ]
-        },
-        {
-            "phone": "9876543211",
-            "email": "student2@example.com",
-            "name": "Jane Smith",
-            "roll_number": "CS2023002",
-            "section": "B",
-            "semester": "6",
-            "batch": "2023",
-            "course": "B.Tech",
-            "branch": "CSE",
-            "face_id": "faceid_124",
-            "sub_attendance": []
-        }
-    ]
+    Enhanced to support face image upload and embedding extraction.
+    
+    Now supports two ways of creating students:
+    
+    1. JSON-only (existing behavior):
+        Content-Type: application/json
+        Body: JSON with student data
+    
+    2. With image (new):
+        Content-Type: multipart/form-data
+        Form fields:
+          - student_data: JSON string with student data
+          - face_image: Image file containing student's face
     """
-    data = request.json or {}
+    # Check if request contains files (multipart form-data)
+    if request.files:
+        return create_student_with_image()
+    else:
+        return create_student_json_only()
 
+def create_student_json_only():
+    """Handle JSON-only student creation (existing functionality)"""
+    data = request.json or {}
+    return _create_student_internal(data, None)
+
+def create_student_with_image():
+    """Handle student creation with image upload"""
+    try:
+        # Get form data
+        student_data_str = request.form.get('student_data')
+        face_image = request.files.get('face_image')
+        
+        if not student_data_str:
+            return jsonify({'error': 'student_data form field is required'}), 400
+        
+        if not face_image:
+            return jsonify({'error': 'face_image file is required'}), 400
+        
+        # Parse student data
+        import json
+        try:
+            data = json.loads(student_data_str)
+        except json.JSONDecodeError:
+            return jsonify({'error': 'Invalid JSON in student_data'}), 400
+        
+        # Extract face embedding
+        embedding, error = extract_face_embedding(face_image)
+        if error:
+            return jsonify({'error': f'Face processing failed: {error}'}), 400
+        
+        # Create student with embedding
+        return _create_student_internal(data, embedding)
+        
+    except Exception as e:
+        return jsonify({'error': 'Internal server error', 'detail': str(e)}), 500
+
+def _create_student_internal(data, face_embedding=None):
+    """Internal method to create student with optional face embedding"""
     # Required field validation
     required_fields = [
         'phone', 'email', 'name', 'roll_number', 'section', 
         'semester', 'batch', 'course', 'branch', 'sub_attendance'
     ]
-    # If data is a list (bulk create), check missing fields for each user
+    
     missing_fields = []
-    if isinstance(data, list):
+    # Ensure data is parsed as JSON if it's a string
+    if isinstance(data, str):
+        import json
+        try:
+            data = json.loads(data)
+        except json.JSONDecodeError:
+            return jsonify({'error': 'Invalid JSON format'}), 400
+
+    if isinstance(data, list) and data:
         missing_fields = [field for field in required_fields if not data[0].get(field)]
-    else:
+    elif isinstance(data, dict):
         missing_fields = [field for field in required_fields if not data.get(field)]
+    else:
+        return jsonify({'error': 'Invalid data format. Expected a list or dictionary.'}), 400
     
     if missing_fields:
         return jsonify({
@@ -105,19 +112,22 @@ def create_student():
     try:
         if isinstance(data, list):
             users = []
-            for student in data:
-                users.append(Student(
-                    phone=student['phone'],
-                    email=student['email'],
-                    name=student['name'],
-                    roll_number=student['roll_number'],
-                    section=student['section'],
-                    semester=student['semester'],
-                    batch=student['batch'],
-                    course=student['course'],
-                    branch=student['branch'],
-                    sub_attendance=student['sub_attendance'],
-                ))
+            for student_data in data:
+                student = Student(
+                    phone=student_data['phone'],
+                    email=student_data['email'],
+                    name=student_data['name'],
+                    roll_number=student_data['roll_number'],
+                    section=student_data['section'],
+                    semester=student_data['semester'],
+                    batch=student_data['batch'],
+                    course=student_data['course'],
+                    branch=student_data['branch'],
+                    sub_attendance=student_data['sub_attendance'],
+                )
+                if face_embedding:
+                    student.face_embedding = face_embedding
+                users.append(student)
                 
             students = Student.objects.insert(users)
         else:
@@ -133,9 +143,10 @@ def create_student():
                 branch=data['branch'],
                 sub_attendance=data.get('sub_attendance', [])
             )
+            if face_embedding:
+                student.face_embedding = face_embedding
+            student.save()
             students = [student]
-        # Save students (validation happens in clean() method)
-        students[0].save()
         
         output = [{
             'id': str(student.id),
@@ -149,13 +160,15 @@ def create_student():
             'course': student.course,
             'branch': student.branch,
             'face_id': student.face_id,
+            'has_face_embedding': student.face_embedding is not None,
             'sub_attendance': student.sub_attendance,
             'created_at': student.created_at.isoformat() if student.created_at else None
         } for student in students]
 
         return jsonify({
             'data': output,
-            'message': 'Student created successfully'
+            'message': 'Student created successfully' + 
+                      (' with face embedding' if face_embedding else '')
         }), 201
         
     except ValidationError as e:
@@ -165,7 +178,6 @@ def create_student():
         }), 400
         
     except NotUniqueError as e:
-        # Check which field caused the uniqueness error
         if 'email' in str(e).lower():
             return jsonify({'error': 'Email already exists'}), 409
         elif 'phone' in str(e).lower():
@@ -484,3 +496,56 @@ def get_students_by_subject():
         }), 200
     except Exception as e:
         return jsonify({'error': 'Failed to retrieve students by subject', 'detail': str(e)}), 500
+    
+# --- ADD FACE EMBEDDING TO EXISTING STUDENT ---    
+def add_face_embedding(student_id):
+    """Add face embedding to an existing student"""
+    try:
+        if 'face_image' not in request.files:
+            return jsonify({'error': 'face_image file is required'}), 400
+        
+        face_image = request.files['face_image']
+        if face_image.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Get student
+        student = Student.objects.get(id=student_id)
+        
+        # Extract face embedding
+        embedding, error = extract_face_embedding(face_image)
+        if error:
+            return jsonify({'error': f'Face processing failed: {error}'}), 400
+        
+        # Update student with embedding
+        student.face_embedding = embedding
+        student.save()
+        
+        return jsonify({
+            'message': 'Face embedding added successfully',
+            'student_id': str(student.id),
+            'name': student.name,
+            'roll_number': student.roll_number
+        }), 200
+        
+    except Student.DoesNotExist:
+        return jsonify({'error': 'Student not found'}), 404
+    except Exception as e:
+        return jsonify({'error': 'Internal server error', 'detail': str(e)}), 500
+
+# --- GET FACE EMBEDDING STATUS ---
+def get_face_embedding_status():
+    """Get statistics about face embeddings"""
+    try:
+        total_students = Student.objects.count()
+        students_with_embedding = Student.objects(face_embedding__exists=True).count()
+        students_without_embedding = total_students - students_with_embedding
+        
+        return jsonify({
+            'total_students': total_students,
+            'students_with_embedding': students_with_embedding,
+            'students_without_embedding': students_without_embedding,
+            'coverage_percentage': round((students_with_embedding / total_students * 100), 2) if total_students > 0 else 0
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': 'Failed to get embedding status', 'detail': str(e)}), 500
