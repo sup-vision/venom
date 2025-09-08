@@ -15,12 +15,5 @@ class Student(Document):
     branch = StringField(required=True)
     face_id = ObjectIdField()
     face_embedding = StringField(required=False)
-    # List of dictionaries, each with 'subject_code' and 'attendance_percentage' (integer)
     sub_attendance = ListField(ObjectIdField())
-        # DictField(
-        #     fields={
-        #         'subject_code': StringField(required=True),
-        #         'attendance_percentage': IntField(min_value=0, max_value=100, default=0)
-        #     }
-        # ),
     created_at = DateTimeField(default=datetime.utcnow)
