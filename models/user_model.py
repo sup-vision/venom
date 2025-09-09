@@ -1,7 +1,12 @@
-from mongoengine import Document, StringField, EmailField, DateTimeField, ListField, ValidationError, ObjectIdField
+from mongoengine import Document, StringField, EmailField, DateTimeField, ListField, ValidationError, ObjectIdField, ReferenceField, EnumField
+from enum import Enum
 from datetime import datetime
 import re
 import bcrypt
+
+class Role(Enum):
+    ADMIN = 'a'
+    FACULTY = 'f'
 
 class User(Document):
     # Email validation with proper format checking
@@ -15,6 +20,12 @@ class User(Document):
     
     # API key validation
     key = StringField(required=True)
+    
+    # Faculty ID field
+    faculty_id = StringField(required=False, max_length=50)
+    
+    # Role field with enum validation
+    role = EnumField(Role, required=True, default=Role.FACULTY)
     
     # 'searches' will store a list of Incident document references (ObjectIds)
     searches = ListField(ObjectIdField(), default=list)
@@ -162,13 +173,15 @@ class User(Document):
             'id': str(self.id),
             'email': self.email,
             'phone': self.phone,
+            'faculty_id': self.faculty_id,
+            'role': self.role.value if self.role else None,
             'searches': self.searches,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
     def __str__(self):
-        return f"User(email={self.email}, phone={self.phone})"
+        return f"User(email={self.email}, phone={self.phone}, role={self.role.value if self.role else None})"
     
     def __repr__(self):
-        return f"<User: {self.email}>"
+        return f"<User: {self.email}, role={self.role.value if self.role else None}>"
