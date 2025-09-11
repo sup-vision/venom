@@ -9,26 +9,15 @@ class Role(Enum):
     FACULTY = 'f'
 
 class User(Document):
-    # Email validation with proper format checking
+    name = StringField(required=True, max_length=50)
     email = EmailField(required=True, unique=True, max_length=254)
-    
-    # Phone validation with E.164 format and uniqueness
     phone = StringField(required=True, unique=True, max_length=20)
-    
-    # Password validation with hash
     password_hash = StringField(required=True, min_length=8, max_length=128)
-    
-    # API key validation
+    # Encryption key validation
     key = StringField(required=True)
-    
-    # Faculty ID field
-    faculty_id = StringField(required=False, max_length=50)
-    
-    # Role field with enum validation
+    faculty_id = StringField(required=False, max_length=50, unique=True)
+    department = StringField(required=False, max_length=50)
     role = EnumField(Role, required=True, default=Role.FACULTY)
-    
-    # 'searches' will store a list of Incident document references (ObjectIds)
-    searches = ListField(ObjectIdField(), default=list)
     
     # Timestamps
     created_at = DateTimeField(default=datetime.utcnow)
@@ -39,21 +28,29 @@ class User(Document):
         'collection': 'user',
         'indexes': [
             'email',
-            'key',
+            'phone',
+            'faculty_id',
+            'role'
         ],
         'ordering': ['-created_at']
     }
     
     def clean(self):
         """Custom validation method called before saving"""
+        self._validate_name()
         self._validate_phone_format()
         self._validate_email_format()
         self._validate_password_strength()
-        # self._validate_key_format()
-        self._validate_searches()
-        
         # Update timestamp
         self.updated_at = datetime.utcnow()
+    
+    def _validate_name(self):
+        """Validate name is present and meets requirements"""
+        if not self.name or not self.name.strip():
+            raise ValidationError('Name is required')
+        if len(self.name) > 50:
+            raise ValidationError('Name must be at most 50 characters long')
+        # Optionally, add more name validation (e.g., no numbers/special chars)
     
     def _validate_phone_format(self):
         """Validate phone number is in E.164 format and only allows Indian country code (+91)"""
@@ -123,25 +120,6 @@ class User(Document):
             # Hash the password
             self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
-    def _validate_searches(self):
-        """Validate searches list (should be a list of ObjectId referencing IncidentModel)"""
-        from bson import ObjectId
-
-        if not isinstance(self.searches, list):
-            raise ValidationError('Searches must be a list')
-
-        validated_searches = []
-        for incident_id in self.searches:
-            if not isinstance(incident_id, ObjectId):
-                # Try to convert from string to ObjectId
-                try:
-                    incident_id = ObjectId(incident_id)
-                except Exception:
-                    raise ValidationError(f'Invalid ObjectId in searches (should reference IncidentModel): {incident_id}')
-            validated_searches.append(incident_id)
-
-        self.searches = validated_searches
-    
     def set_password(self, password):
         """Set password with automatic hashing"""
         if not password:
@@ -171,17 +149,18 @@ class User(Document):
         """Convert user to dictionary (excluding sensitive fields)"""
         return {
             'id': str(self.id),
+            'name': self.name,
             'email': self.email,
             'phone': self.phone,
             'faculty_id': self.faculty_id,
+            'department': self.department,
             'role': self.role.value if self.role else None,
-            'searches': self.searches,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
     def __str__(self):
-        return f"User(email={self.email}, phone={self.phone}, role={self.role.value if self.role else None})"
+        return f"User(name={self.name}, email={self.email}, phone={self.phone}, role={self.role.value if self.role else None})"
     
     def __repr__(self):
-        return f"<User: {self.email}, role={self.role.value if self.role else None}>"
+        return f"<User: {self.name}, email={self.email}, role={self.role.value if self.role else None}>"

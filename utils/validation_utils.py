@@ -3,7 +3,7 @@ import string
 import re
 from typing import Optional, Tuple, List
 
-def generate_secure_api_key(length: int = 64) -> str:
+def generate_secure_encryption_key(length: int = 64) -> str:
     """
     Generate a secure random API key
     
@@ -20,7 +20,7 @@ def generate_secure_api_key(length: int = 64) -> str:
     alphabet = string.ascii_letters + string.digits + "_-"
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-def validate_api_key_format(key: str) -> Tuple[bool, Optional[str]]:
+def validate_encryption_key_format(key: str) -> Tuple[bool, Optional[str]]:
     """
     Validate API key format
     

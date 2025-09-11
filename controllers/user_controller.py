@@ -1,8 +1,7 @@
 from flask import request, jsonify, current_app, send_file
-from models.user_model import User
+from models.user_model import User, Role
 from utils.validation_utils import (
-    generate_secure_api_key,
-    validate_api_key_format,
+    generate_secure_encryption_key,
     sanitize_input,
 )
 from mongoengine.errors import ValidationError, NotUniqueError
@@ -15,25 +14,43 @@ def create_user():
     data = request.json or {}
 
     # Required field validation
-    required_fields = ['email', 'password', 'phone']
+    required_fields = ['name', 'email','faculty_id', 'password', 'phone', 'role', 'department']
     missing_fields = [field for field in required_fields if not data.get(field)]
     
     if missing_fields:
         return jsonify({
-            'error': 'Missing required fields',
-            'missing_fields': missing_fields
+            'error': f"{missing_fields} required fields",
+        }), 400
+    
+    # Validate role
+    if data.get('role') not in ['a', 'f']:
+        return jsonify({
+            'error': 'Invalid role. Must be "a" for admin or "f" for faculty'
+        }), 400
+    
+    # Validate faculty_id is provided for faculty role
+    if data.get('role') == 'f' and not data.get('faculty_id'):
+        return jsonify({
+            'error': 'faculty_id is required for faculty role'
         }), 400
     
     try:
         # Generate secure API key
-        api_key = generate_secure_api_key()
+        encryption_key = generate_secure_encryption_key()
+        
+        # Convert role string to enum
+        role_enum = Role.ADMIN if data['role'] == 'a' else Role.FACULTY
         
         # Create user with validation
         user = User(
+            name=data['name'],
             email=data['email'],
             phone=data['phone'],
             password_hash=data['password'],  # Will be hashed automatically
-            key=api_key,
+            key=encryption_key,
+            faculty_id=data.get('faculty_id'),
+            department=data.get('department'),
+            role=role_enum,
         )
         
         # Save user (validation happens in clean() method)
@@ -42,9 +59,13 @@ def create_user():
         return jsonify({
             'data': {
                 'id': str(user.id),
+                'name': user.name,
                 'email': user.email,
                 'phone': user.phone,
-                'api_key': api_key,
+                'faculty_id': user.faculty_id,
+                'department': user.department,
+                'role': user.role.value,
+                'encryption_key': encryption_key,
             },
             'message': 'User created successfully'
         }), 201
@@ -61,6 +82,8 @@ def create_user():
             return jsonify({'error': 'Email already exists'}), 409
         elif 'phone' in str(e).lower():
             return jsonify({'error': 'Phone number already exists'}), 409
+        elif 'faculty_id' in str(e).lower():
+            return jsonify({'error': 'Faculty ID already exists'}), 409
         else:
             return jsonify({'error': 'Duplicate entry'}), 409
         
@@ -95,8 +118,12 @@ def login_user():
             return jsonify({
                 "message": 'Login successful',
                 'user_id': str(user.id),
+                'name': user.name,
                 'email': user.email,
                 'phone': user.phone,
+                'faculty_id': user.faculty_id,
+                'department': user.department,
+                'role': user.role.value,
             }), 200
         else:
             return jsonify({
@@ -154,57 +181,76 @@ def get_user(user_id):
         }), 500
 
 # --- UPDATE ---
-# def update_user(user_id):
-#     """Update user with validation"""
-#     data = request.get_json() or {}
+def update_user(user_id):
+    """Update user with validation"""
+    data = request.get_json() or {}
     
-#     if not data:
-#         return jsonify({
-#             'error': 'No data provided for update'
-#         }), 400
+    if not data:
+        return jsonify({
+            'error': 'No data provided for update'
+        }), 400
     
-#     try:
-#         user = User.objects.get(id=user_id)
-        
-#         # Validate fields before update
-#         update_data = {}
+    # Validate role if provided
+    if 'role' in data and data['role'] not in ['a', 'f']:
+        return jsonify({
+            'error': 'Invalid role. Must be "a" for admin or "f" for faculty'
+        }), 400
     
-#         # Update user with validated data
-#         if update_data:
-#             user.update(**update_data)
+    # Validate faculty_id requirement for faculty role
+    if data.get('role') == 'f' and not data.get('faculty_id'):
+        return jsonify({
+            'error': 'faculty_id is required for faculty role'
+        }), 400
+    
+    try:
+        user = User.objects.get(id=user_id)
         
-#         # Save to trigger validation
-#         user.save()
+        # Update allowed fields
+        if 'email' in data:
+            user.email = data['email']
+        if 'phone' in data:
+            user.phone = data['phone']
+        if 'name' in data:
+            user.name = data['name']
+        if 'faculty_id' in data:
+            user.faculty_id = data['faculty_id']
+        if 'department' in data:
+            user.department = data['department']
+        if 'role' in data:
+            user.role = Role.ADMIN if data['role'] == 'a' else Role.FACULTY
         
-#         return jsonify({
-#             "message": "User updated successfully",
-#             "user": user.to_dict()
-#         }), 200
+        # Save to trigger validation
+        user.save()
         
-#     except User.DoesNotExist:
-#         return jsonify({
-#             "error": "User not found"
-#         }), 404
+        return jsonify({
+            "message": "User updated successfully",
+            "user": user.to_dict()
+        }), 200
         
-#     except ValidationError as e:
-#         return jsonify({
-#             'error': 'Validation error',
-#             'details': str(e)
-#         }), 400
+    except User.DoesNotExist:
+        return jsonify({
+            "error": "User not found"
+        }), 404
         
-#     except NotUniqueError as e:
-#         if 'email' in str(e).lower():
-#             return jsonify({'error': 'Email already exists'}), 409
-#         elif 'phone' in str(e).lower():
-#             return jsonify({'error': 'Phone number already exists'}), 409
-#         else:
-#             return jsonify({'error': 'Duplicate entry'}), 409
+    except ValidationError as e:
+        return jsonify({
+            'error': 'Validation error',
+            'details': str(e)
+        }), 400
         
-#     except Exception as e:
-#         return jsonify({
-#             'error': 'Failed to update user',
-#             'detail': str(e)
-#         }), 500
+    except NotUniqueError as e:
+        if 'email' in str(e).lower():
+            return jsonify({'error': 'Email already exists'}), 409
+        elif 'phone' in str(e).lower():
+            return jsonify({'error': 'Phone number already exists'}), 409
+        else:
+            return jsonify({'error': 'Duplicate entry'}), 409
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to update user',
+            'detail': str(e)
+        }), 500
 
 # --- DELETE ---
 def delete_user(user_id):
@@ -236,4 +282,107 @@ def delete_user(user_id):
         return jsonify({
             'detail': str(e),
             'error': 'Failed to delete user'
+        }), 500
+
+# --- ROLE-BASED OPERATIONS ---
+def get_users_by_role(role):
+    """Get all users by role"""
+    try:
+        # Validate role
+        if role not in ['a', 'f']:
+            return jsonify({
+                'error': 'Invalid role. Must be "a" for admin or "f" for faculty'
+            }), 400
+        
+        role_enum = Role.ADMIN if role == 'a' else Role.FACULTY
+        users = User.objects(role=role_enum)
+        
+        output = []
+        for user in users:
+            output.append(user.to_dict())
+        
+        return jsonify({
+            'users': output,
+            'count': len(output),
+            'role': role
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to retrieve users by role',
+            'detail': str(e)
+        }), 500
+
+def get_faculty_by_id(faculty_id):
+    """Get faculty user by faculty_id"""
+    try:
+        user = User.objects.get(faculty_id=faculty_id, role=Role.FACULTY)
+        return jsonify(user.to_dict()), 200
+        
+    except User.DoesNotExist:
+        return jsonify({
+            "error": "Faculty not found"
+        }), 404
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to retrieve faculty',
+            'detail': str(e)
+        }), 500
+
+def update_user_role(user_id):
+    """Update only the role of a user (admin operation)"""
+    data = request.get_json() or {}
+    
+    if 'role' not in data:
+        return jsonify({
+            'error': 'Role is required'
+        }), 400
+    
+    if data['role'] not in ['a', 'f']:
+        return jsonify({
+            'error': 'Invalid role. Must be "a" for admin or "f" for faculty'
+        }), 400
+    
+    # Validate faculty_id requirement for faculty role
+    if data['role'] == 'f' and not data.get('faculty_id'):
+        return jsonify({
+            'error': 'faculty_id is required for faculty role'
+        }), 400
+    
+    try:
+        user = User.objects.get(id=user_id)
+        
+        # Update role
+        user.role = Role.ADMIN if data['role'] == 'a' else Role.FACULTY
+        
+        # Update faculty_id if provided and role is faculty
+        if data['role'] == 'f' and 'faculty_id' in data:
+            user.faculty_id = data['faculty_id']
+        elif data['role'] == 'a':
+            # Clear faculty_id for admin role
+            user.faculty_id = None
+        
+        user.save()
+        
+        return jsonify({
+            "message": "User role updated successfully",
+            "user": user.to_dict()
+        }), 200
+        
+    except User.DoesNotExist:
+        return jsonify({
+            "error": "User not found"
+        }), 404
+        
+    except ValidationError as e:
+        return jsonify({
+            'error': 'Validation error',
+            'details': str(e)
+        }), 400
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to update user role',
+            'detail': str(e)
         }), 500
