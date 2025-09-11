@@ -6,8 +6,8 @@ import re
 
 # Define updatable fields for student
 UPDATABLE_FIELDS = [
-    'phone', 'email', 'name', 'section', 'semester', 
-    'batch', 'course', 'branch', 'face_id', 'sub_attendance'
+    'phone', 'email', 'name', 'roll_number', 'section', 'semester', 
+    'batch', 'course', 'branch', 'face_id', 'face_embedding', 'sub_attendance'
 ]
 FINDABLE_FIELDS = [
     'section', 'semester', 'branch', 'course'
@@ -20,74 +20,12 @@ FINDABLE_FIELDS_WITH_ROLL_NUMBER = [
 
 # --- CREATE ---
 def create_student():
-    """
-    Example of expected request data (JSON):
-
-    For a single student:
-    {
-        "phone": "9876543210",
-        "email": "student@example.com",
-        "name": "John Doe",
-        "roll_number": "CS2023001",
-        "section": "A",
-        "semester": "6",
-        "batch": "2023",
-        "course": "B.Tech",
-        "branch": "CSE",
-        "face_id": "faceid_123",
-        "sub_attendance": [
-            {
-                "subject_code": "CS101",
-                "attendance_percentage": 85
-            },
-            {
-                "subject_code": "MA102",
-                "attendance_percentage": 90
-            }
-        ]
-    }
-
-    For bulk create (list of students):
-    [
-        {
-            "phone": "9876543210",
-            "email": "student1@example.com",
-            "name": "John Doe",
-            "roll_number": "CS2023001",
-            "section": "A",
-            "semester": "6",
-            "batch": "2023",
-            "course": "B.Tech",
-            "branch": "CSE",
-            "face_id": "faceid_123",
-            "sub_attendance": [
-                {
-                    "subject_code": "CS101",
-                    "attendance_percentage": 85
-                }
-            ]
-        },
-        {
-            "phone": "9876543211",
-            "email": "student2@example.com",
-            "name": "Jane Smith",
-            "roll_number": "CS2023002",
-            "section": "B",
-            "semester": "6",
-            "batch": "2023",
-            "course": "B.Tech",
-            "branch": "CSE",
-            "face_id": "faceid_124",
-            "sub_attendance": []
-        }
-    ]
-    """
     data = request.json or {}
 
     # Required field validation
     required_fields = [
         'phone', 'email', 'name', 'roll_number', 'section', 
-        'semester', 'batch', 'course', 'branch', 'sub_attendance'
+        'semester', 'batch', 'course', 'branch'
     ]
     # If data is a list (bulk create), check missing fields for each user
     missing_fields = []
@@ -116,7 +54,9 @@ def create_student():
                     batch=student['batch'],
                     course=student['course'],
                     branch=student['branch'],
-                    sub_attendance=student['sub_attendance'],
+                    face_id=student.get('face_id'),
+                    face_embedding=student.get('face_embedding'),
+                    sub_attendance=student.get('sub_attendance', [])
                 ))
                 
             students = Student.objects.insert(users)
@@ -131,6 +71,8 @@ def create_student():
                 batch=data['batch'],
                 course=data['course'],
                 branch=data['branch'],
+                face_id=data.get('face_id'),
+                face_embedding=data.get('face_embedding'),
                 sub_attendance=data.get('sub_attendance', [])
             )
             students = [student]
@@ -296,95 +238,6 @@ def update_student(student_id):
     except Exception as e:
         return jsonify({'error': 'Failed to update student', 'detail': str(e)}), 500
 
-# --- BULK ATTENDANCE UPDATE ---
-def update_attendance_for_subject():
-    """
-    Update attendance percentage for all students in a specific subject.
-
-    Example of expected request data (JSON):
-
-    {
-        "subject_code": "CS101",
-        "semester": "6",
-        "section": "A",
-        "branch": "CSE",
-        "student_ids": [  # List of student IDs
-            "665f2b1e2c8b4e1a2b3c4d5e",
-            "665f2b1e2c8b4e1a2b3c4d5f"
-        ]
-    }
-    """
-    data = request.get_json() or {}
-    
-
-    # Validate required fields
-    if 'subject_code' not in data:
-        return jsonify({'error': 'subject_code is required'}), 400
-    
-    if 'student_ids' not in data:
-        return jsonify({'error': 'student_ids is required'}), 400
-    
-    subject_code = data['subject_code']
-    student_ids = data['student_ids']
-    
-    # Validate attendance_data format
-    if not isinstance(student_ids, list):
-        return jsonify({'error': 'attendance_data must be a list'}), 400
-    
-    try:
-        all_students = []
-        updated_count = 0
-        errors = []
-
-        missing_fields = [field for field in FINDABLE_FIELDS[:-1] if field not in data]
-        if missing_fields:
-            errors.append(f"Missing required fields: {missing_fields}")
-        else:
-            filter_query = {field: data[field] for field in FINDABLE_FIELDS[:-1]}
-            all_students = Student.objects(**filter_query)
-        
-        for student_id in student_ids:
-            if student_id not in [str(student.id) for student in all_students]:
-                errors.append(f"Student with ID {student_id} not found")
-                continue  # Skip this ID and continue with the next one
-
-            student = Student.objects.get(id=student_id)
-            for i, sub_att in enumerate(student.sub_attendance):
-                if sub_att.get('subject_code') == subject_code:
-                    # Update attendance using your logic
-                    attendance_percentage_old = student.sub_attendance[i]['attendance_percentage']
-                    if attendance_percentage_old < 100:
-                        total_classes = round(100 / (100 - attendance_percentage_old)) if attendance_percentage_old != 0 else 1
-                        total_classes_attended = round((attendance_percentage_old / 100) * total_classes)
-                        total_classes += 1
-                        total_classes_attended += 1
-                        new_percentage = (total_classes_attended / total_classes) * 100
-                        student.sub_attendance[i]['attendance_percentage'] = new_percentage
-                    else:
-                        # Already 100%, just increment total_classes and attended
-                        total_classes = 1
-                        total_classes_attended = 1
-                        student.sub_attendance[i]['attendance_percentage'] = 100
-                    break
-            else:
-                student.sub_attendance.append({
-                    'subject_code': subject_code,
-                    'attendance_percentage': 0
-                })
-                
-            student.save()
-            updated_count += 1
-
-        return jsonify({
-            'message': f'Attendance update completed for subject {subject_code}',
-            'updated_students': updated_count,
-            'total_requests': len(student_ids),
-            'errors': errors if errors else None,
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': 'Failed to update attendance', 'detail': str(e)}), 500
-
 # --- DELETE ---
 def delete_student(student_id):
     """Delete a student"""
@@ -449,38 +302,3 @@ def search_students():
         }), 200
     except Exception as e:
         return jsonify({'error': 'Search failed', 'detail': str(e)}), 500
-
-# --- GET STUDENTS BY SUBJECT ---
-def get_students_by_subject():
-    """Get all students enrolled in a specific subject"""
-    try:
-        subject_code = request.args.get('subject_code', '').strip()
-        if not subject_code:
-            return jsonify({'error': 'subject_code parameter is required'}), 400
-
-        # Find students who have this subject in their sub_attendance
-        students = Student.objects(sub_attendance__subject_code=subject_code)
-        
-        output = [{
-            'id': str(student.id),
-            'name': student.name,
-            'roll_number': student.roll_number,
-            'email': student.email,
-            'section': student.section,
-            'semester': student.semester,
-            'batch': student.batch,
-            'course': student.course,
-            'branch': student.branch,
-            'attendance_percentage': next(
-                (att['attendance_percentage'] for att in student.sub_attendance 
-                 if att.get('subject_code') == subject_code), None
-            )
-        } for student in students]
-
-        return jsonify({
-            'subject_code': subject_code,
-            'students': output,
-            'count': len(output)
-        }), 200
-    except Exception as e:
-        return jsonify({'error': 'Failed to retrieve students by subject', 'detail': str(e)}), 500

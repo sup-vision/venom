@@ -1,0 +1,68 @@
+[
+    {
+            "phone": "9883319587",
+            "email": "ashutosh.saha.cse.2024@tint.edu.in",
+            "name": "Ashutosh Saha",
+            "roll_number": "18700124043",
+            "section": "A",
+            "semester": "3",
+            "batch": "2024",
+            "course": "B.Tech",
+            "branch": "CSE"
+    },
+    {
+            "phone": "9142235617",
+            "email": "aman.raj.cse.2024@tint.edu.in",
+            "name": "Aman Raj",
+            "roll_number": "18700124058",
+            "section": "A",
+            "semester": "3",
+            "batch": "2024",
+            "course": "B.Tech",
+            "branch": "CSE"
+    },
+    {
+            "phone": "9433067650",
+            "email": "nandini.gupta.cse.2024@tint.edu.in",
+            "name": "Nandini Gupta",
+            "roll_number": "18700124035",
+            "section": "A",
+            "semester": "3",
+            "batch": "2024",
+            "course": "B.Tech",
+            "branch": "CSE"
+    },
+    {
+            "phone": "9163227480",
+            "email": "Susovan.chatterjee.cse.2024@tint.edu.in",
+            "name": "Susovan Chatterjee",
+            "roll_number": "18700124014",
+            "section": "A",
+            "semester": "3",
+            "batch": "2024",
+            "course": "B.Tech",
+            "branch": "CSE"
+    },
+    {
+            "phone": "8159060072",
+            "email": "jeet.sarkar.cse.2024@tint.edu.in",
+            "name": "Jeet Sarkar",
+            "roll_number": "187001240167",
+            "section": "C",
+            "semester": "3",
+            "batch": "2024",
+            "course": "B.Tech",
+            "branch": "CSE"
+    },
+    {
+            "phone": "6297562760",
+            "email": "sk.akib.ahamed.2024@tint.edu.in",
+            "name": "Sk Akib Ahamed",
+            "roll_number": "18700124019",
+            "section": "A",
+            "semester": "3",
+            "batch": "2024",
+            "course": "B.Tech",
+            "branch": "CSE"
+    }
+]

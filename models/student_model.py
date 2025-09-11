@@ -1,7 +1,6 @@
 from mongoengine import Document, StringField, DateTimeField, ListField, DictField, IntField, ObjectIdField
 from datetime import datetime
 
-
 # Put required for specific fields
 class Student(Document):
     phone = StringField(required=True)
@@ -14,6 +13,6 @@ class Student(Document):
     course = StringField(required=True)
     branch = StringField(required=True)
     face_id = ObjectIdField()
-    face_embedding = StringField(required=False)
+    face_embedding = StringField()
     sub_attendance = ListField(ObjectIdField())
     created_at = DateTimeField(default=datetime.utcnow)

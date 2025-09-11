@@ -6,9 +6,7 @@ from controllers.student_controller import (
     get_student,
     update_student,
     delete_student,
-    search_students,
-    get_students_by_subject,
-    update_attendance_for_subject
+    search_students
 )
 
 bp = Blueprint('student', __name__)
@@ -37,13 +35,3 @@ def delete_student_route(student_id):
 @bp.route('/search', methods=['GET'])
 def search_students_route():
     return search_students()
-
-# --- SUBJECT-SPECIFIC ROUTES ---
-@bp.route('/by-subject', methods=['GET'])
-def get_students_by_subject_route():
-    return get_students_by_subject()
-
-# --- ATTENDANCE ROUTES ---
-@bp.route('/attendance/bulk-update', methods=['POST'])
-def update_attendance_for_subject_route():
-    return update_attendance_for_subject()
