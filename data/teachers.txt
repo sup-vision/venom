@@ -1,0 +1,38 @@
+[
+{
+    "name": "Debraj Chatterjee",
+    "email": "Debraj.Chatterjee@tint.edu.in",
+    "password": "SecurePass123",
+    "phone": "+919876543210",
+    "faculty_id": "FAC001",
+    "department": "CSE",
+    "role": "f"
+},
+{
+    "name": "Anoural Islam",
+    "email": "Anoural.Islam@tint.edu.in",
+    "password": "SecurePass123",
+    "phone": "+919876543211",
+    "faculty_id": "FAC002",
+    "department": "ECE",
+    "role": "f"
+},
+{
+    "name": "Indibar Majhi",
+    "email": "Indibar.Majhi@tint.edu.in",
+    "password": "SecurePass123",
+    "phone": "+919876543212",
+    "faculty_id": "FAC003",
+    "department": "IT",
+    "role": "f"
+},
+{
+    "name": "Srijan Dutta",
+    "email": "Srijan.Dutta@tint.edu.in",
+    "password": "SecurePass123",
+    "phone": "+919876543213",
+    "faculty_id": "FAC004",
+    "department": "CSE",
+    "role": "f"
+}
+]

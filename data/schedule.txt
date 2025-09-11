@@ -1,0 +1,46 @@
+[
+  {
+    "subject_code": "PCCCS301",
+    "subject_name": "Data Structure and Algorithm",
+    "associative_fac_id": "68c319d6ad4b6fded6908977",
+    "branch": "CSE",
+    "semester": "3",
+    "year": 2025,
+    "section": "A",
+    "day": "Wednesday",
+    "time": "09:30 AM"
+  },
+  {
+    "subject_code": "ESC301",
+    "subject_name": "Analog and Digital Electronics",
+    "associative_fac_id": "68c319e2ad4b6fded6908978",
+    "branch": "CSE",
+    "semester": "3",
+    "year": 2025,
+    "section": "A",
+    "day": "Wednesday",
+    "time": "10:25 AM"
+  },
+  {
+    "subject_code": "PCCCS393",
+    "subject_name": "IT Workshop",
+    "associative_fac_id": "68c319ecad4b6fded6908979",
+    "branch": "CSE",
+    "semester": "3",
+    "year": 2025,
+    "section": "A",
+    "day": "Wednesday",
+    "time": "11:20 AM"
+  },
+  {
+    "subject_code": "BSC301",
+    "subject_name": "Mathematics - III",
+    "associative_fac_id": "68c319f2ad4b6fded690897a",
+    "branch": "CSE",
+    "semester": "3",
+    "year": 2025,
+    "section": "A",
+    "day": "Wednesday",
+    "time": "12:15 PM"
+  }
+]
