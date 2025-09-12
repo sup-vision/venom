@@ -122,19 +122,22 @@ def create_student():
 
 # --- READ ALL ---
 def get_all_students():
-    data = request.get_json() or {}
-
+    data = request.get_json()
     try:
-        # If no data is provided, return all students
+        git # If no data is provided, return all students
         if not data:
             students = Student.objects()
-        # If all four filter fields are present and no extra fields, filter by them
-        elif all(field in data for field in FINDABLE_FIELDS) and len(data) == len(FINDABLE_FIELDS):
-            filter_query = {field: data[field] for field in FINDABLE_FIELDS}
-            students = Student.objects(**filter_query)
         else:
-            # If data is provided but not exactly the four filter fields, return all students
-            students = Student.objects()
+            # Validate and filter data based on FINDABLE_FIELDS only
+            # Extract only the fields that are in FINDABLE_FIELDS, ignoring any extra fields
+            filter_query = {field: data[field] for field in FINDABLE_FIELDS if field in data}
+            
+            # If we have valid filter fields, use them for querying
+            if len(filter_query) > 0:
+                students = Student.objects(**filter_query)
+            else:
+                # If no valid filter fields found, return all students
+                students = Student.objects()
 
         output = [{
             'id': str(student.id),
