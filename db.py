@@ -16,10 +16,10 @@ def init_db(app):
     fs = gridfs.GridFS(db)
 
     # ensure index to speed metadata lookups
-    # Create an index on the 'metadata.user_id' field in ascending order (1)
+    # Create an index on the 'metadata._id' field in ascending order (1)
     # This speeds up queries that filter or sort by user_id in the GridFS files collection
     try:
-        db.fs.files.create_index([('metadata.user_id', 1)])
+        db.fs.files.create_index([('metadata._id', 1)])
     except Exception:
         # If index creation fails (e.g., index already exists), silently continue
         pass
