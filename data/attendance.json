@@ -1,0 +1,34 @@
+{
+    "subject_name": "PCCCS393",
+    "subject_code": "PCCCS393",
+    "section": "A",
+    "semester": "3",
+    "branch": "CSE",
+    "date": "2025-09-12T09:00:00Z",
+    "attendances": [
+         {
+             "student_id": "68c343cb83e657ecce11b665",
+             "is_present": "p"
+         },
+         {
+             "student_id": "68c343cb83e657ecce11b664",
+             "is_present": "p"
+         },
+         {
+             "student_id": "68c343cb83e657ecce11b663",
+             "is_present": "p"
+         },
+         {
+             "student_id": "68c343cb83e657ecce11b662",
+             "is_present": "p"
+         },
+         {
+             "student_id": "68c343cb83e657ecce11b661",
+             "is_present": "p"
+         },
+         {
+             "student_id": "68c343cb83e657ecce11b660",
+             "is_present": "a"
+         }
+     ]
+}
