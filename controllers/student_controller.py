@@ -124,7 +124,7 @@ def create_student():
 def get_all_students():
     data = request.get_json()
     try:
-        git # If no data is provided, return all students
+        # If no data is provided, return all students
         if not data:
             students = Student.objects()
         else:
