@@ -10,11 +10,12 @@ except ImportError:
 
 from services.gridfs_service import gridfs_service
 
-def upload_image():
+def upload_image(filterParams=None):
     """Upload single or multiple images to GridFS with id and student_id metadata"""
     try:
         # Get form data
-        image_files = request.files.getlist('images')
+        image_files = filterParams['images'] or request.files.getlist('images')
+        id = filterParams['id'] or request.form.get('id')
         
         if not image_files or all(file.filename == '' for file in image_files):
             return jsonify({
@@ -22,7 +23,6 @@ def upload_image():
             }), 400
         
         # Get metadata
-        id = request.form.get('id')
         image_type = request.form.get('image_type', 'general')  # general, profile, attendance, etc.
         
         if not id:

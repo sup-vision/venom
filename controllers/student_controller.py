@@ -121,8 +121,8 @@ def create_student():
         return jsonify({'error': 'Internal server error', 'detail': str(e)}), 500
 
 # --- READ ALL ---
-def get_all_students():
-    data = request.get_json()
+def get_all_students(filterParams=None):
+    data = filterParams or request.get_json()
     try:
         # If no data is provided, return all students
         if not data:
