@@ -19,11 +19,13 @@ services:
       - MONGO_URI=mongodb://mongo:27017/venom
       - FLASK_ENV=development
       - FLASK_APP=app.py
+    working_dir: /app
+    volumes:
+      - ./supvision:/app   # live code mounting 
     ports:
       - "5000:5000"
-    # volumes:
-    #   - .:/app   # live code mounting
     command: flask run --host=0.0.0.0 --port=5000 --reload
+
 
   model_server:
     build: ./model_server
@@ -36,8 +38,8 @@ services:
       - FLASK_APP=app.py
     ports:
       - "8000:8000"
-    # volumes:
-    #   - .:/app   # live code mounting
-    command: python model_server/app.py
+    volumes:
+      - ./model_server:/app   # live code mounting
+    command: python app.py
 volumes:
   mongo-data:
