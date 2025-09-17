@@ -6,9 +6,6 @@ from flask import current_app
 from db import init_db
 from bson import ObjectId
 from bson.errors import InvalidId
-from datetime import datetime
-import io
-import base64
 
 class GridFSService:
     """Service class for GridFS operations"""

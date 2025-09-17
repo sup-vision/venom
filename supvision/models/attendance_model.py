@@ -1,4 +1,4 @@
-from mongoengine import Document, StringField, ObjectIdField, EnumField, DateTimeField, ValidationError
+from mongoengine import Document, StringField, ObjectIdField, EnumField, DateTimeField
 from enum import Enum
 from datetime import datetime
 

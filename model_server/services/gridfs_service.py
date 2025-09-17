@@ -7,8 +7,6 @@ from db import init_db
 from bson import ObjectId
 from bson.errors import InvalidId
 from datetime import datetime
-import io
-import base64
 import logging
 
 class GridFSService:

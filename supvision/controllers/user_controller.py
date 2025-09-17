@@ -1,12 +1,9 @@
-from flask import request, jsonify, current_app, send_file
+from flask import request, jsonify
 from models.user_model import User, Role
 from utils.validation_utils import (
     generate_secure_encryption_key,
-    sanitize_input,
 )
 from mongoengine.errors import ValidationError, NotUniqueError
-from bson import ObjectId
-import io
 
 # --- CREATE ---
 def create_user():

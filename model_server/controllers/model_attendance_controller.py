@@ -2,11 +2,10 @@ import os
 import logging
 from flask import request, jsonify
 from face_recognition.engine import process_image, ensure_initialized
-from db import students_collection, files_collection
+from db import students_collection
 from services.gridfs_service import gridfs_service
 from datetime import datetime
 import tempfile
-from bson import ObjectId
 
 def build_attendance_response(recognized_students, students):
     recognized_ids = {str(s['student_id']) for s in recognized_students}

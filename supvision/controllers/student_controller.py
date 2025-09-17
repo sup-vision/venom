@@ -1,7 +1,6 @@
 from flask import request, jsonify
 from models.student_model import Student
 from mongoengine.errors import ValidationError, NotUniqueError
-from datetime import datetime
 import re
 
 # Define updatable fields for student

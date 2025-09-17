@@ -1,7 +1,7 @@
 import secrets
 import string
 import re
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple
 
 def generate_secure_encryption_key(length: int = 64) -> str:
     """

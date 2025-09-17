@@ -1,9 +1,8 @@
-import pymongo
 import logging
 from pymongo import MongoClient
 import gridfs
 import mongoengine as me
-from config import MONGO_URI, DB_NAME
+from config import MONGO_URI
 
 client = None
 db = None

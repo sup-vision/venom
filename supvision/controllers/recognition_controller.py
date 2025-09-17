@@ -1,11 +1,5 @@
 from flask import request, jsonify
-import requests
-import base64
 import json
-from models.student_model import Student
-from models.attendance_model import Attendance, IsPresent
-from bson import ObjectId
-from bson.errors import InvalidId
 from datetime import datetime, timedelta, timezone
 from controllers.image_controller import upload_image
 from controllers.student_controller import get_all_students

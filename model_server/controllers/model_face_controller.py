@@ -1,12 +1,8 @@
-import os, tempfile
-import logging
 from flask import Blueprint, request, jsonify, current_app as app
-from werkzeug.utils import secure_filename
 from bson import ObjectId
 from utils.face_utils import validate_face
 from db import students_collection, mongodb_available
 from services.gridfs_service import gridfs_service
-from datetime import datetime
 
 face_bp = Blueprint("face_bp", __name__)
 UPLOAD_FOLDER = "uploads"

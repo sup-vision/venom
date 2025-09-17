@@ -4,7 +4,6 @@ import logging
 
 from routes.model_face_routes import face_bp
 from routes.model_attendance_routes import attendance_bp
-from routes.file_routes import file_bp
 from db import init_db
 
 def create_app():
@@ -16,7 +15,6 @@ def create_app():
 
   app.register_blueprint(face_bp, url_prefix="/api/valid_face")
   app.register_blueprint(attendance_bp, url_prefix="/api/attendance")
-  app.register_blueprint(file_bp, url_prefix="/api/files")
 
   return app
 

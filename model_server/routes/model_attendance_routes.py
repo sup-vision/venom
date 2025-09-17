@@ -1,23 +1,18 @@
 from flask import Blueprint, jsonify
-from controllers.model_attendance_controller import attendance_from_image, test_attendance, process_attendance_from_data
+from controllers.model_attendance_controller import attendance_from_image, test_attendance
 from db import mongodb_available, students_collection
 
-bp = Blueprint('attendance_bp', __name__)
+attendance_bp = Blueprint('attendance_bp', __name__)
 
-@bp.route('/upload', methods=['POST'])
+@attendance_bp.route('/upload', methods=['POST'])
 def upload_image():
   return attendance_from_image()
 
-@bp.route('/test', methods=['GET'])
+@attendance_bp.route('/test', methods=['GET'])
 def test_image():
   return test_attendance()
 
-@bp.route('/process', methods=['POST'])
-def process_attendance():
-  """Process attendance from JSON data with file IDs"""
-  return process_attendance_from_data()
-
-@bp.route('/status', methods=['GET'])
+@attendance_bp.route('/status', methods=['GET'])
 def get_status():
   """Get database and system status"""
   try:
