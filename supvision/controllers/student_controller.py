@@ -25,7 +25,7 @@ def create_student():
     # Required field validation
     required_fields = [
         'phone', 'email', 'name', 'roll_number', 'section', 
-        'semester', 'batch', 'course', 'branch'
+        'semester', 'batch', 'course', 'branch', 'password'
     ]
     # If data is a list (bulk create), check missing fields for each user
     missing_fields = []
@@ -49,6 +49,7 @@ def create_student():
                     email=student['email'],
                     name=student['name'],
                     roll_number=student['roll_number'],
+                    password_hash=student['password'],
                     section=student['section'],
                     semester=student['semester'],
                     batch=student['batch'],
@@ -305,3 +306,71 @@ def search_students():
         }), 200
     except Exception as e:
         return jsonify({'error': 'Search failed', 'detail': str(e)}), 500
+
+# --- LOGIN STUDENT ---
+def login_student():
+    """Login student with proper validation"""
+    data = request.json or {}
+    
+    if not data.get('email') and not data.get('roll_number') and not data.get('phone'):
+        return jsonify({
+            'error': 'Email or roll number or phone is required'
+        }), 400
+    elif not data.get('password'):
+        return jsonify({
+            'error': 'Password is required'
+        }), 400
+
+    # Determine query field based on provided data
+    if data.get('email'):
+        query = {"email": data.get('email')}
+    elif data.get('phone'):
+        query = {"phone": data.get('phone')}
+    elif data.get('roll_number'):
+        query = {"roll_number": data.get('roll_number')}
+
+
+    try:
+        student = Student.objects.get(**query)
+        
+        # Check if student has a password set
+        if not student.password_hash:
+            return jsonify({
+                "error": "Student account does not have a password set. Please contact administrator."
+            }), 401
+        
+        # Check password using the model method
+        if student.check_password(data['password']):
+            return jsonify({
+                "message": 'Login successful',
+                'data': {
+                    'id': str(student.id),
+                    'name': student.name,
+                    'roll_number': student.roll_number,
+                    'email': student.email,
+                    'phone': student.phone,
+                    'section': student.section,
+                    'semester': student.semester,
+                    'batch': student.batch,
+                    'course': student.course,
+                    'branch': student.branch,
+                    'face_id': student.face_id,
+                    'sub_attendance': student.sub_attendance,
+                    'created_at': student.created_at.isoformat() if student.created_at else None
+                }
+            }), 200
+        else:
+            return jsonify({
+                "error": "Invalid credentials"
+            }), 401
+        
+    except Student.DoesNotExist:
+        return jsonify({
+            "error": "Invalid credentials"
+        }), 401
+        
+    except Exception as e:
+        return jsonify({
+            "error": "Login failed",
+            "detail": str(e)
+        }), 500

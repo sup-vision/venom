@@ -6,7 +6,8 @@ from controllers.student_controller import (
     get_student,
     update_student,
     delete_student,
-    search_students
+    search_students,
+    login_student
 )
 
 bp = Blueprint('student', __name__)
@@ -14,6 +15,10 @@ bp = Blueprint('student', __name__)
 @bp.route('', methods=['POST'])
 def create_student_route():
     return create_student()
+
+@bp.route('/login', methods=['POST'])
+def login_student_route():
+    return login_student()
 
 @bp.route('', methods=['GET'])
 def get_all_students_route():
