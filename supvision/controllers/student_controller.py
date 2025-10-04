@@ -1,3 +1,4 @@
+import db
 from flask import request, jsonify
 from models.student_model import Student
 from mongoengine.errors import ValidationError, NotUniqueError
@@ -374,3 +375,14 @@ def login_student():
             "error": "Login failed",
             "detail": str(e)
         }), 500
+
+# --- DROP DATABASE COLLECTION ---
+def drop_database_collection():
+    """Drop the database collection"""
+    try:
+        # Get all students and delete all
+        students = Student.objects()
+        students.delete()
+        return jsonify({'message': 'Database collection dropped successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to drop database collection', 'detail': str(e)}), 500

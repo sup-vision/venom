@@ -7,7 +7,8 @@ from controllers.student_controller import (
     update_student,
     delete_student,
     search_students,
-    login_student
+    login_student,
+    drop_database_collection
 )
 
 bp = Blueprint('student', __name__)
@@ -40,3 +41,8 @@ def delete_student_route(student_id):
 @bp.route('/search', methods=['GET'])
 def search_students_route():
     return search_students()
+
+# drop database collection
+@bp.route('/drop', methods=['DELETE'])
+def drop_database_collection_route():
+    return drop_database_collection()
