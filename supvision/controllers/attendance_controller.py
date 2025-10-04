@@ -85,16 +85,16 @@ def create_attendance_bulk():
                 end_of_day = to_ist(end_of_day)
                 
                 # Check if an attendance record already exists for this student, subject, and date (same day)
-                existing = Attendance.objects(
-                    student_id=attendance_data['student_id'],
-                    subject_code=data['subject_code'],
-                    date__gte=start_of_day,
-                    date__lt=end_of_day
-                ).first()
+                # existing = Attendance.objects(
+                #     student_id=attendance_data['student_id'],
+                #     subject_code=data['subject_code'],
+                #     date__gte=start_of_day,
+                #     date__lt=end_of_day
+                # ).first()
                 
-                if existing:
-                    errors.append(f'Attendance {i+1}: Attendance already exists for this student and date')
-                    continue
+                # if existing:
+                #     errors.append(f'Attendance {i+1}: Attendance already exists for this student and date')
+                #     continue
                 
                 # Create attendance record
                 attendance = Attendance(
@@ -214,20 +214,56 @@ def get_attendance_by_student(student_id, subject_code=None):
         if subject_code:
             query['subject_code'] = subject_code
         
-        attendances = Attendance.objects.get(**query)
-        output = []
-
-        if isinstance(attendances, list) and len(attendances) >= 1:
-            for attendance in attendances:
-                output.append(attendance.to_dict())
-        else:
-            output.append(attendances.to_dict())
+        attendances = Attendance.objects.filter(**query)
+        attendance_list = [attendance.to_dict() for attendance in attendances]
         
-        return jsonify({
-            'attendances': output,
-            'count': len(output),
-            'student_id': str(student_id)
-        }), 200
+        # Calculate attendance statistics
+        total_present = len([a for a in attendances if a.is_present.value == 'p'])
+        total_absent = len([a for a in attendances if a.is_present.value == 'a'])
+        total_classes = total_present + total_absent
+        
+        # Calculate subject-specific attendance
+        subject_stats = {}
+        for attendance in attendances:
+            sub_code = attendance.subject_code
+            if sub_code not in subject_stats:
+                subject_stats[sub_code] = {
+                    'subject_code': sub_code,
+                    'subject_name': attendance.subject_name,
+                    'present': 0,
+                    'absent': 0,
+                    'total': 0
+                }
+            
+            if attendance.is_present.value == 'p':
+                subject_stats[sub_code]['present'] += 1
+            else:
+                subject_stats[sub_code]['absent'] += 1
+            subject_stats[sub_code]['total'] += 1
+        
+        # Calculate percentages for each subject
+        for sub_code, stats in subject_stats.items():
+            stats['attendance_percentage'] = round((stats['present'] / stats['total']) * 100, 2) if stats['total'] > 0 else 0
+        
+        # Calculate overall attendance percentage
+        overall_percentage = round((total_present / total_classes) * 100, 2) if total_classes > 0 else 0
+        
+        # Sort subject stats by subject_code
+        sorted_subject_stats = sorted(subject_stats.values(), key=lambda x: x['subject_code'])
+        
+        response_data = {
+            'count': len(attendance_list),
+            'student_id': str(student_id),
+            'attendance_summary': {
+                'total_classes': total_classes,
+                'total_present': total_present,
+                'total_absent': total_absent,
+                'overall_percentage': overall_percentage
+            },
+            'subject_statistics': sorted_subject_stats
+        }
+        
+        return jsonify(response_data), 200
         
     except Student.DoesNotExist:
         return jsonify({
