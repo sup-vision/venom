@@ -37,7 +37,8 @@ def create_attendance_bulk():
         }), 400
     
     # Validate common fields for all attendances
-    common_fields = ['subject_name', 'subject_code', 'section', 'semester', 'branch', 'student_image_id', 'class_image_id']
+    # FIX: # 1. student_image_id and 2. class_image_id add this field and prod
+    common_fields = ['subject_name', 'subject_code', 'section', 'semester', 'branch']
     for field in common_fields:
         if field not in data:
             return jsonify({
@@ -60,9 +61,9 @@ def create_attendance_bulk():
                 
                 # Validate ObjectId fields
                 try:
-                    student_id_obj = ObjectId(attendance_data['student_id'])
-                    student_image_id_obj = ObjectId(data['student_image_id'])
-                    class_image_id_obj = ObjectId(data['class_image_id'])
+                    student_id_obj = attendance_data['student_id']
+                    # student_image_id_obj = ObjectId(data['student_image_id'])
+                    # class_image_id_obj = ObjectId(data['class_image_id'])
                 except (InvalidId, TypeError):
                     errors.append(f'Attendance {i+1}: Invalid ObjectId format for student_id, student_image_id, or class_image_id')
                     continue
@@ -98,8 +99,9 @@ def create_attendance_bulk():
                 # Create attendance record
                 attendance = Attendance(
                     student_id=student_id_obj,
-                    student_image_id=student_image_id_obj,
-                    class_image_id=class_image_id_obj,
+                    # FIX: # 1. student_image_id and 2. class_image_id add this field and prod
+                    # student_image_id=student_image_id_obj,
+                    # class_image_id=class_image_id_obj,
                     subject_name=data['subject_name'],
                     subject_code=data['subject_code'],
                     is_present=IsPresent.PRESENT if is_present == 'p' else IsPresent.ABSENT,
@@ -201,35 +203,25 @@ def update_attendance(attendance_id):
             'detail': str(e)
         }), 500
 
-def get_attendance_by_student(student_id, subject_name=None, start_date=None, end_date=None):
+def get_attendance_by_student(student_id, subject_code=None):
     """Get attendance records for a specific student with optional filters"""
     try:
         # Validate student exists
         student = Student.objects.get(id=student_id)
-        
         # Build query
         query = {'student_id': student_id}
         
-        if subject_name:
-            query['subject_name'] = subject_name
+        if subject_code:
+            query['subject_code'] = subject_code
         
-        if start_date:
-            if isinstance(start_date, str):
-                start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-            start_date = to_ist(start_date)
-            query['date__gte'] = start_date
-        
-        if end_date:
-            if isinstance(end_date, str):
-                end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-            end_date = to_ist(end_date)
-            query['date__lte'] = end_date
-        
-        attendances = Attendance.objects(**query)
+        attendances = Attendance.objects.get(**query)
         output = []
-        
-        for attendance in attendances:
-            output.append(attendance.to_dict())
+
+        if isinstance(attendances, list) and len(attendances) >= 1:
+            for attendance in attendances:
+                output.append(attendance.to_dict())
+        else:
+            output.append(attendances.to_dict())
         
         return jsonify({
             'attendances': output,
@@ -248,49 +240,37 @@ def get_attendance_by_student(student_id, subject_name=None, start_date=None, en
             'detail': str(e)
         }), 500
 
-def get_attendance_by_subject(subject_code, section=None, date=None):
-    """Get attendance records for a specific subject with optional filters"""
-    try:
-        # Validate subject exists
-        subject = Schedule.objects.get(subject_code=subject_code)
+# def get_attendance_by_subject(subject_code, section=None):
+#     """Get attendance records for a specific subject with optional filters"""
+#     try:
+#         # Validate subject exists
+#         subject = Schedule.objects.get(subject_code=subject_code)
         
-        # Build query
-        query = {'subject_code': subject_code}
+#         # Build query
+#         query = {'subject_code': subject_code}
         
-        if section:
-            query['section'] = section
+#         if section:
+#             query['section'] = section
         
-        if date:
-            if isinstance(date, str):
-                date = datetime.fromisoformat(date.replace('Z', '+00:00'))
-            date = to_ist(date)
-            # Filter by date range (whole day in IST)
-            start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_date = date.replace(hour=23, minute=59, second=59, microsecond=999999)
-            start_date = to_ist(start_date)
-            end_date = to_ist(end_date)
-            query['date__gte'] = start_date
-            query['date__lte'] = end_date
+#         attendances = Attendance.objects.get(**query)
+#         output = []
         
-        attendances = Attendance.objects(**query)
-        output = []
+#         for attendance in attendances:
+#             output.append(attendance.to_dict())
         
-        for attendance in attendances:
-            output.append(attendance.to_dict())
+#         return jsonify({
+#             'attendances': output,
+#             'count': len(output),
+#             'subject_code': str(subject_code)
+#         }), 200
         
-        return jsonify({
-            'attendances': output,
-            'count': len(output),
-            'subject_code': str(subject_code)
-        }), 200
+#     except Schedule.DoesNotExist:
+#         return jsonify({
+#             "error": "Subject not found"
+#         }), 404
         
-    except Schedule.DoesNotExist:
-        return jsonify({
-            "error": "Subject not found"
-        }), 404
-        
-    except Exception as e:
-        return jsonify({
-            'error': 'Failed to retrieve attendance',
-            'detail': str(e)
-        }), 500
+#     except Exception as e:
+#         return jsonify({
+#             'error': 'Failed to retrieve attendance',
+#             'detail': str(e)
+#         }), 500

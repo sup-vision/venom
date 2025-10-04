@@ -8,8 +8,9 @@ class IsPresent(Enum):
 
 class Attendance(Document):
     student_id = ObjectIdField(required=True)
-    student_image_id = ObjectIdField(required=True)
-    class_image_id = ObjectIdField(required=True)
+    # FIX: # 1. student_image_id and 2. class_image_id add this fields as required and production
+    student_image_id = ObjectIdField()
+    class_image_id = ObjectIdField()
     subject_name = StringField(required=True)
     subject_code = StringField(required=True)
     is_present = EnumField(IsPresent, required=True, default=IsPresent.ABSENT)
