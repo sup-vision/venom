@@ -27,8 +27,8 @@ def init_face_analysis():
         logging.error(f"❌ Failed to initialize FaceAnalysis: {str(e)}")
         return False
 
-def initialize_face_recognition(filter_params=None):
-    """Initialize the complete face recognition system with optional filtering"""
+def initialize_face_recognition():
+    """Initialize the complete face recognition system"""
     global face_app, index, student_embeddings, student_details, id_map, initialized
     
     if face_app is None:
@@ -42,28 +42,8 @@ def initialize_face_recognition(filter_params=None):
     student_embeddings, student_details, id_map = {}, {}, {}
     embeddings_list, ids_list = [], []
 
-    # Define fields that can be used for filtering students
-    FINDABLE_FIELDS = [
-        'roll_number', 'section', 
-        'semester', 'batch', 'course', 'branch'
-    ]
-
     try:
-        # If no data is provided, return all students
-        if not filter_params:
-            students = students_collection.find({})
-        else:
-            # Validate and filter data based on FINDABLE_FIELDS only
-            # Extract only the fields that are in FINDABLE_FIELDS, ignoring any extra fields
-            filter_query = {field: filter_params[field] for field in FINDABLE_FIELDS if field in filter_params}
-            
-            # If we have valid filter fields, use them for querying
-            if len(filter_query) > 0:
-                students = students_collection.find(filter_query)
-            else:
-                # If no valid filter fields found, return all students
-                students = students_collection.find({})
-        
+        students = students_collection.find({})
         for student in students:
             student_id = student["_id"]
             name = student.get("name", "Unknown")
@@ -117,35 +97,22 @@ def is_initialized():
     """Check if the face recognition system is initialized"""
     return initialized and face_app is not None and index is not None
 
-def ensure_initialized(filter_params=None):
-    """Ensure the face recognition system is initialized with the given filter parameters"""
-    global initialized
-    
-    # If already initialized and no new filter params, return True
-    if is_initialized() and filter_params is None:
+def ensure_initialized():
+    """Ensure the face recognition system is initialized, try to initialize if not"""
+    if is_initialized():
         return True
     
-    # If filter params provided, reinitialize with new filters
-    if filter_params is not None:
-        logging.info(f"Reinitializing face recognition with filters: {filter_params}")
-        initialized = False  # Reset initialization flag
-        return initialize_face_recognition(filter_params)
-    
-    # If not initialized, initialize without filters
-    if not is_initialized():
-        logging.warning("Face recognition not initialized. Attempting to initialize...")
-        return initialize_face_recognition()
-    
-    return True
+    logging.warning("Face recognition not initialized. Attempting to initialize...")
+    return initialize_face_recognition()
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def process_image(image_path, filter_params=None):
+def process_image(image_path):
     """Process a single image and return recognized students with details"""
-    if not ensure_initialized(filter_params):
+    if not ensure_initialized():
         logging.error("Face recognition system could not be initialized")
         return []
     
@@ -245,9 +212,3 @@ def get_student_details():
 
 def get_id_map():
     return id_map
-
-def reinitialize_with_filters(filter_params):
-    """Reinitialize the face recognition system with new filter parameters"""
-    global initialized
-    initialized = False
-    return initialize_face_recognition(filter_params)

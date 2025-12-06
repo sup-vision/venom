@@ -76,26 +76,6 @@ def create_attendance_bulk():
                     errors.append(f'Attendance {i+1}: is_present must be "p" or "a"')
                     continue
                 
-                # Check for duplicate attendance
-                start_of_day = attendance_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_of_day = attendance_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-                
-                # Make sure both are timezone-aware in IST
-                start_of_day = to_ist(start_of_day)
-                end_of_day = to_ist(end_of_day)
-                
-                # Check if an attendance record already exists for this student, subject, and date (same day)
-                # existing = Attendance.objects(
-                #     student_id=attendance_data['student_id'],
-                #     subject_code=data['subject_code'],
-                #     date__gte=start_of_day,
-                #     date__lt=end_of_day
-                # ).first()
-                
-                # if existing:
-                #     errors.append(f'Attendance {i+1}: Attendance already exists for this student and date')
-                #     continue
-                
                 # Create attendance record
                 attendance = Attendance(
                     student_id=student_id_obj,
